@@ -564,6 +564,11 @@ with col_info1:
         | **ROA** | 20% | > 1.5% | 0.5% - 1.5% | < 0.5% |
         | **ROE** | 15% | > 15% | 10% - 15% | < 10% |
         | **Cobertura** | 10% | > 120% | 100% - 120% | < 100% |
+
+        **Puntaje según Zona**
+        ```
+        Verde (100 puntos), Amarilla (50 puntos), Roja (0 puntos)
+        ```
         
         **Fórmula:**
         ```
