@@ -32,6 +32,13 @@ st.markdown("""
     .health-regular { background-color: #fff3cd; border-left-color: #ffc107; }
     .health-deficient { background-color: #f8d7da; border-left-color: #dc3545; }
     .health-critical { background-color: #dc3545; border-left-color: #721c24; color: white; }
+    .indicator-card { 
+        background-color: #f8f9fa; 
+        padding: 0.5rem;
+        border-radius: 5px;
+        margin: 0.2rem 0;
+        border-left: 3px solid #6c757d;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -43,18 +50,18 @@ def calcular_salud_financiera(morosidad, liquidez, roa, roe, cobertura):
     def puntuar_indicador(valor, rangos_verde, rangos_amarillo, tipo):
         if tipo == "menor_mejor":  # Para morosidad (menor es mejor)
             if valor < rangos_verde:
-                return 100
+                return 100, "🟢 Verde"
             elif valor <= rangos_amarillo:
-                return 60
+                return 60, "🟡 Amarillo"
             else:
-                return 20
+                return 20, "🔴 Rojo"
         else:  # Para los demás (mayor es mejor)
             if valor > rangos_verde:
-                return 100
+                return 100, "🟢 Verde"
             elif valor >= rangos_amarillo:
-                return 60
+                return 60, "🟡 Amarillo"
             else:
-                return 20
+                return 20, "🔴 Rojo"
     
     # Pesos de cada indicador
     pesos = {
@@ -66,11 +73,11 @@ def calcular_salud_financiera(morosidad, liquidez, roa, roe, cobertura):
     }
     
     # Calcular puntajes individuales
-    p_morosidad = puntuar_indicador(morosidad, 5, 10, "menor_mejor")
-    p_liquidez = puntuar_indicador(liquidez, 20, 10, "mayor_mejor")
-    p_roa = puntuar_indicador(roa, 1.5, 0.5, "mayor_mejor")
-    p_roe = puntuar_indicador(roe, 15, 10, "mayor_mejor")
-    p_cobertura = puntuar_indicador(cobertura, 120, 100, "mayor_mejor")
+    p_morosidad, zona_morosidad = puntuar_indicador(morosidad, 5, 10, "menor_mejor")
+    p_liquidez, zona_liquidez = puntuar_indicador(liquidez, 20, 10, "mayor_mejor")
+    p_roa, zona_roa = puntuar_indicador(roa, 1.5, 0.5, "mayor_mejor")
+    p_roe, zona_roe = puntuar_indicador(roe, 15, 10, "mayor_mejor")
+    p_cobertura, zona_cobertura = puntuar_indicador(cobertura, 120, 100, "mayor_mejor")
     
     # Calcular puntaje total ponderado
     puntaje_total = (
@@ -98,7 +105,16 @@ def calcular_salud_financiera(morosidad, liquidez, roa, roe, cobertura):
         categoria = "Crítica"
         clase_css = "health-critical"
     
-    return puntaje_total, categoria, clase_css
+    # Retornar también los puntajes individuales
+    puntajes_individuales = {
+        'MOROSIDAD': {'puntaje': p_morosidad, 'zona': zona_morosidad},
+        'LIQUIDEZ': {'puntaje': p_liquidez, 'zona': zona_liquidez},
+        'ROA': {'puntaje': p_roa, 'zona': zona_roa},
+        'ROE': {'puntaje': p_roe, 'zona': zona_roe},
+        'COBERTURA': {'puntaje': p_cobertura, 'zona': zona_cobertura}
+    }
+    
+    return puntaje_total, categoria, clase_css, puntajes_individuales
 
 # --- FUNCIÓN PARA CREAR GRÁFICOS ESTILIZADOS ---
 def crear_grafico_estilizado():
@@ -145,7 +161,55 @@ indicadores_renamed = {
     'RESULTADOS DEL EJERCICIO / PATRIMONIO PROMEDIO': 'ROE'
 }
 
-indicadores_model_order = ['COBERTURA_CARTERA_PROBLEMATICA', 'LIQUIDEZ', 'MOROSIDAD', 'ROA', 'ROE']
+# ORDEN ESPECÍFICO SOLICITADO: Morosidad, Liquidez, ROA, ROE, Cobertura
+indicadores_model_order = ['MOROSIDAD', 'LIQUIDEZ', 'ROA', 'ROE', 'COBERTURA_CARTERA_PROBLEMATICA']
+nombres_amigables = {
+    'MOROSIDAD': 'Morosidad de la Cartera Total',
+    'LIQUIDEZ': 'Liquidez (Fondos Disponibles / Total Depósitos Corto Plazo)',
+    'ROA': 'ROA (Resultados del Ejercicio / Activo Promedio)',
+    'ROE': 'ROE (Resultados del Ejercicio / Patrimonio Promedio)',
+    'COBERTURA_CARTERA_PROBLEMATICA': 'Cobertura de la Cartera Problemática'
+}
+
+# --- SECCIÓN: FORMATO DEL ARCHIVO EXCEL REQUERIDO ---
+st.header("📋 Formato del Archivo Excel Requerido")
+st.markdown("""
+El archivo Excel (`.xlsx`) debe contener los siguientes 4 columnas con datos históricos:
+
+- `RUC`: Identificador de la cooperativa (ej. '1090000001001').
+- `FECHA_CORTE`: Fecha de los datos (ej. '2023-01-31').
+- `INDICADOR_FINANCIERO`: Nombre del indicador (debe coincidir con los esperados).
+- `VALOR`: Valor numérico del indicador **en formato decimal** (ej: 0.045 para 4.5%).
+
+**Nombres de Indicadores esperados en la columna 'INDICADOR_FINANCIERO':**
+- `MOROSIDAD DE LA CARTERA TOTAL`
+- `COBERTURA DE LA CARTERA PROBLEMÁTICA`
+- `RESULTADOS DEL EJERCICIO / ACTIVO PROMEDIO`
+- `FONDOS DISPONIBLES / TOTAL DEPOSITOS A CORTO PLAZO `
+- `RESULTADOS DEL EJERCICIO / PATRIMONIO PROMEDIO`
+
+**Ejemplo de las primeras filas de tu archivo Excel:**
+""")
+
+example_data = {
+    'RUC': ['1090000001001', '1090000001001', '1090000001001', '1090000001001', '1090000001001'],
+    'FECHA_CORTE': ['2023-01-31', '2023-01-31', '2023-01-31', '2023-01-31', '2023-01-31'],
+    'INDICADOR_FINANCIERO': [
+        'MOROSIDAD DE LA CARTERA TOTAL',
+        'COBERTURA DE LA CARTERA PROBLEMÁTICA',
+        'RESULTADOS DEL EJERCICIO / ACTIVO PROMEDIO',
+        'FONDOS DISPONIBLES / TOTAL DEPOSITOS A CORTO PLAZO ',
+        'RESULTADOS DEL EJERCICIO / PATRIMONIO PROMEDIO'
+    ],
+    'VALOR': [0.045, 0.882, 0.012, 0.250, 0.085]  # Valores en decimal
+}
+example_df = pd.DataFrame(example_data)
+st.dataframe(example_df)
+
+st.markdown("""
+**Nota importante:** Los valores en el archivo Excel deben estar en formato decimal (ej: 4.5% = 0.045). 
+La aplicación convertirá automáticamente estos valores a porcentajes para su visualización.
+""")
 
 # --- INTERFAZ DE CARGA DE ARCHIVOS ---
 st.header("📁 Carga de Datos Históricos")
@@ -158,7 +222,7 @@ if archivo is not None:
             df_raw = pd.read_excel(io.BytesIO(archivo.getvalue()))
             df_raw['RUC'] = df_raw['RUC'].astype(str)
             
-            # Procesamiento de datos (mantener tu lógica existente)
+            # Procesamiento de datos
             df_filtered = df_raw[df_raw['INDICADOR_FINANCIERO'].isin(indicadores_elegidos_raw)].copy()
             
             for ind in indicadores_elegidos_raw:
@@ -174,6 +238,11 @@ if archivo is not None:
             df_processed.columns.name = None
             df_processed = df_processed.rename(columns=indicadores_renamed)
             
+            # CONVERTIR DECIMALES A PORCENTAJES (multiplicar por 100)
+            for col in indicadores_model_order:
+                if col in df_processed.columns:
+                    df_processed[col] = df_processed[col] * 100
+            
             if all(col in df_processed.columns for col in indicadores_model_order):
                 df_processed['FECHA_CORTE'] = pd.to_datetime(df_processed['FECHA_CORTE'])
                 df_processed = df_processed[['RUC', 'FECHA_CORTE'] + indicadores_model_order].sort_values(['RUC', 'FECHA_CORTE'])
@@ -181,7 +250,7 @@ if archivo is not None:
                 # Calcular salud financiera histórica
                 historico_salud = []
                 for _, row in df_processed.iterrows():
-                    puntaje, categoria, _ = calcular_salud_financiera(
+                    puntaje, categoria, _, _ = calcular_salud_financiera(
                         row['MOROSIDAD'], row['LIQUIDEZ'], row['ROA'], row['ROE'], row['COBERTURA_CARTERA_PROBLEMATICA']
                     )
                     historico_salud.append(puntaje)
@@ -189,6 +258,7 @@ if archivo is not None:
                 df_processed['SALUD_FINANCIERA'] = historico_salud
                 
                 st.success("✅ Datos procesados correctamente")
+                st.write("Vista previa de los datos procesados (valores en %):")
                 st.dataframe(df_processed.head(), use_container_width=True)
             else:
                 st.error("❌ Faltan columnas necesarias en los datos")
@@ -215,8 +285,8 @@ if df_processed is not None:
             if len(df_ruc) < 12:
                 st.warning("⚠️ Se necesitan al menos 12 meses de datos históricos")
             else:
-                # Preparar datos para predicción
-                data = df_ruc[indicadores_model_order].values
+                # Preparar datos para predicción (convertir a decimal para el modelo)
+                data = df_ruc[indicadores_model_order].values / 100  # Dividir entre 100 para el modelo
                 data_scaled = scaler.transform(data)
                 time_step = 12
                 last_sequence = data_scaled[-time_step:]
@@ -235,19 +305,22 @@ if df_processed is not None:
                     future_preds_original.append(pred_original)
                     last_sequence = np.append(last_sequence[1:], pred_scaled, axis=0)
                 
-                # Crear DataFrame con predicciones
+                # Convertir predicciones a porcentaje
+                future_preds_percent = [pred * 100 for pred in future_preds_original]
+                
+                # Crear DataFrame con predicciones (en porcentaje)
                 last_date = df_ruc['FECHA_CORTE'].max()
                 future_dates = pd.date_range(start=last_date + pd.Timedelta(days=1), 
                                            periods=future_steps, freq='M')
                 
-                df_future = pd.DataFrame(future_preds_original, 
+                df_future = pd.DataFrame(future_preds_percent, 
                                        index=future_dates, 
                                        columns=indicadores_model_order)
                 
                 # Calcular salud financiera para predicciones
                 salud_futura = []
                 for _, row in df_future.iterrows():
-                    puntaje, categoria, clase = calcular_salud_financiera(
+                    puntaje, categoria, clase, puntajes_individuales = calcular_salud_financiera(
                         row['MOROSIDAD'], row['LIQUIDEZ'], row['ROA'], row['ROE'], 
                         row['COBERTURA_CARTERA_PROBLEMATICA']
                     )
@@ -255,7 +328,8 @@ if df_processed is not None:
                         'Fecha': row.name,
                         'Puntaje': puntaje,
                         'Categoría': categoria,
-                        'Clase': clase
+                        'Clase': clase,
+                        'Puntajes_Individuales': puntajes_individuales
                     })
                 
                 # --- VISUALIZACIÓN DE RESULTADOS ---
@@ -296,8 +370,9 @@ if df_processed is not None:
                 # --- CUADRO DE PREDICCIONES POR MES ---
                 st.subheader("📋 Detalle de Predicciones por Mes")
                 
-                for i, (fecha, pred) in enumerate(zip(fechas_pred, future_preds_original)):
+                for i, (fecha, pred) in enumerate(zip(fechas_pred, future_preds_percent)):
                     salud_mes = salud_futura[i]
+                    puntajes_ind = salud_mes['Puntajes_Individuales']
                     
                     # Crear columnas para cada mes predicho
                     with st.container():
@@ -306,19 +381,25 @@ if df_processed is not None:
                         col_pred1, col_pred2, col_pred3 = st.columns([2, 1, 1])
                         
                         with col_pred1:
-                            # Mostrar valores de indicadores
+                            # Mostrar valores de indicadores con sus puntajes
                             st.markdown("**Indicadores Predichos:**")
-                            indicadores_data = {
-                                'Indicador': ['Morosidad', 'Liquidez', 'ROA', 'ROE', 'Cobertura'],
-                                'Valor': [
-                                    f"{pred[indicadores_model_order.index('MOROSIDAD')]:.2f}%",
-                                    f"{pred[indicadores_model_order.index('LIQUIDEZ')]:.2f}%",
-                                    f"{pred[indicadores_model_order.index('ROA')]:.2f}%",
-                                    f"{pred[indicadores_model_order.index('ROE')]:.2f}%",
-                                    f"{pred[indicadores_model_order.index('COBERTURA_CARTERA_PROBLEMATICA')]:.2f}%"
-                                ]
-                            }
-                            st.dataframe(pd.DataFrame(indicadores_data), use_container_width=True)
+                            
+                            # Crear DataFrame para mostrar indicadores con puntajes
+                            indicadores_data = []
+                            for idx, indicador in enumerate(indicadores_model_order):
+                                valor_pred = pred[idx]
+                                puntaje_ind = puntajes_ind[indicador]['puntaje']
+                                zona_ind = puntajes_ind[indicador]['zona']
+                                
+                                indicadores_data.append({
+                                    'Indicador': nombres_amigables[indicador],
+                                    'Valor': f"{valor_pred:.2f}%",
+                                    'Puntaje': f"{puntaje_ind} pts",
+                                    'Zona': zona_ind
+                                })
+                            
+                            df_indicadores = pd.DataFrame(indicadores_data)
+                            st.dataframe(df_indicadores, use_container_width=True)
                         
                         with col_pred2:
                             # Mostrar puntaje de salud
@@ -347,7 +428,7 @@ if df_processed is not None:
                         
                         st.markdown("---")
                 
-                # --- GRÁFICOS INDIVIDUALES DE INDICADORES ---
+                # --- GRÁFICOS INDIVIDUALES DE INDICADORES EN ORDEN SOLICITADO ---
                 st.subheader("📊 Tendencia de Indicadores Individuales")
                 
                 # Configurar subplots
@@ -356,15 +437,10 @@ if df_processed is not None:
                 
                 colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd']
                 
+                # Crear gráficos en el orden específico solicitado
                 for idx, indicador in enumerate(indicadores_model_order):
                     if idx < len(axes):
                         ax = axes[idx]
-                        
-                        # Nombre amigable para el título
-                        nombre_amigable = next(
-                            (k for k, v in indicadores_renamed.items() if v == indicador), 
-                            indicador
-                        )
                         
                         # Datos históricos
                         ax.plot(df_ruc['FECHA_CORTE'], df_ruc[indicador], 
@@ -376,7 +452,7 @@ if df_processed is not None:
                                linewidth=2, marker='s')
                         
                         ax.axvline(x=last_date, color='green', linestyle=':', alpha=0.7)
-                        ax.set_title(nombre_amigable, fontweight='bold')
+                        ax.set_title(nombres_amigables[indicador], fontweight='bold', fontsize=10)
                         ax.legend()
                         ax.grid(True, alpha=0.3)
                         ax.tick_params(axis='x', rotation=45)
