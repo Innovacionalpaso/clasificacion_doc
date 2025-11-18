@@ -1,4 +1,5 @@
-streamlit
+streamlit==1.24.1
+python-magic-bin==0.4.24
 pandas
 numpy
 scikit-learn
@@ -8,4 +9,3 @@ Pillow
 PyPDF2
 PyMuPDF
 python-magic
-python-magic-bin
