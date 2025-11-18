@@ -7,13 +7,6 @@ Original file is located at
     https://colab.research.google.com/drive/1U_P5QxzjOuK2r8i3TMYlTdeIrfuPgov2
 """
 
-!pip install streamlit
-!pip install docx
-!pip install python-docx
-!pip install python-pptx
-!pip install PyPDF2
-!pip install pdfplumber
-
 import streamlit as st # Biblioteca principal para crear aplicaciones web interactivas.
 import os # Módulo para interactuar con el sistema operativo (rutas de archivos, directorios).
 import docx # Librería para trabajar con archivos Microsoft Word (.docx).
