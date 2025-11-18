@@ -105,13 +105,13 @@ def calcular_salud_financiera(morosidad, liquidez, roa, roe, cobertura):
         categoria = "Crítica"
         clase_css = "health-critical"
     
-    # Retornar también los puntajes individuales
+    # Retornar también los puntajes individuales - CORREGIDO
     puntajes_individuales = {
         'MOROSIDAD': {'puntaje': p_morosidad, 'zona': zona_morosidad},
         'LIQUIDEZ': {'puntaje': p_liquidez, 'zona': zona_liquidez},
         'ROA': {'puntaje': p_roa, 'zona': zona_roa},
         'ROE': {'puntaje': p_roe, 'zona': zona_roe},
-        'COBERTURA': {'puntaje': p_cobertura, 'zona': zona_cobertura}
+        'COBERTURA_CARTERA_PROBLEMATICA': {'puntaje': p_cobertura, 'zona': zona_cobertura}
     }
     
     return puntaje_total, categoria, clase_css, puntajes_individuales
@@ -384,18 +384,20 @@ if df_processed is not None:
                             # Mostrar valores de indicadores con sus puntajes
                             st.markdown("**Indicadores Predichos:**")
                             
-                            # Crear DataFrame para mostrar indicadores con puntajes
+                            # Crear DataFrame para mostrar indicadores con puntajes - CORREGIDO
                             indicadores_data = []
                             for idx, indicador in enumerate(indicadores_model_order):
                                 valor_pred = pred[idx]
-                                puntaje_ind = puntajes_ind[indicador]['puntaje']
-                                zona_ind = puntajes_ind[indicador]['zona']
+                                # CORRECCIÓN: Usar la clave correcta del diccionario
+                                puntaje_ind_obj = puntajes_ind.get(indicador, {})
+                                puntaje_val = puntaje_ind_obj.get('puntaje', 0)
+                                zona_val = puntaje_ind_obj.get('zona', 'N/A')
                                 
                                 indicadores_data.append({
                                     'Indicador': nombres_amigables[indicador],
                                     'Valor': f"{valor_pred:.2f}%",
-                                    'Puntaje': f"{puntaje_ind} pts",
-                                    'Zona': zona_ind
+                                    'Puntaje': f"{puntaje_val} pts",
+                                    'Zona': zona_val
                                 })
                             
                             df_indicadores = pd.DataFrame(indicadores_data)
