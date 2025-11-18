@@ -338,8 +338,8 @@ if df_processed is not None:
                 
                 # Crear DataFrame con predicciones (convertir a %)
                 last_date = df_ruc['FECHA_CORTE'].max()
-                future_dates = pd.date_range(start=last_date + pd.DateOffset(months=1), 
-                                           periods=future_steps, freq='MS')
+                future_dates = pd.date_range(start=last_date + pd.offsets.MonthBegin(1), 
+                           periods=future_steps, freq='MS')
                 
                 df_future = pd.DataFrame(future_preds_original, 
                                        index=future_dates, 
