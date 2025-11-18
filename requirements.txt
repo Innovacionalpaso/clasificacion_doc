@@ -5,7 +5,7 @@ python-pptx
 PyPDF2
 pdfplumber
 spacy
-scikit-learn
+scikit-learn==1.6.1
 nltk
 torch # O tensorflow, si prefieres. Hugging Face puede usar ambos.
 transformers # La librería para los modelos
