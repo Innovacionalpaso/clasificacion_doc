@@ -1,12 +1,8 @@
-streamlit
-python-docx
-openpyxl
-python-pptx
-PyPDF2
-pdfplumber
-spacy
-scikit-learn==1.6.1
-nltk
-torch # O tensorflow, si prefieres. Hugging Face puede usar ambos.
-transformers # La librería para los modelos
-sentence-transformers # Para embeddings y clustering semántico
+streamlit==1.28.0
+pandas==2.0.3
+numpy==1.24.3
+tensorflow==2.13.0
+scikit-learn==1.3.0
+matplotlib==3.7.2
+joblib==1.3.2
+openpyxl==3.1.2
